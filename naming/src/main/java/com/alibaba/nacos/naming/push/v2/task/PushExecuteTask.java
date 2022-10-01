@@ -58,6 +58,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
         try {
             PushDataWrapper wrapper = generatePushData();
             ClientManager clientManager = delayTaskEngine.getClientManager();
+            // 推送的服务， 获取对应服务的所有订阅者
             for (String each : getTargetClientIds()) {
                 Client client = clientManager.getClient(each);
                 if (null == client) {
@@ -150,7 +151,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
                     isPushToAll);
             PushResultHookHolder.getInstance().pushFailed(result);
         }
-        
+
         private ServiceInfo getServiceInfo(Service service, ServiceInfo serviceInfo) {
             ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service)
                     .orElse(null);

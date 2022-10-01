@@ -404,7 +404,9 @@ public class ServerListManager implements Closeable {
         serverUrls = new ArrayList<>(newServerAddrList);
         iterator = iterator();
         currentServerAddr = iterator.next();
-        
+        /**
+         * 0907 发布产生了变化的服务列表，当前此时只是通知
+         */
         // Using unified event processor, NotifyCenter
         NotifyCenter.publishEvent(new ServerlistChangeEvent());
         LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);

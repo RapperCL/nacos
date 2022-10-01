@@ -406,7 +406,7 @@ public class ClientWorker implements Closeable {
         this.configFilterChainManager = configFilterChainManager;
         
         init(properties);
-        
+        // 代理？ 客户端网络代理？ 负责完成底层通信？
         agent = new ConfigRpcTransportClient(properties, serverListManager);
         int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
         ScheduledExecutorService executorService = Executors
@@ -430,6 +430,7 @@ public class ClientWorker implements Closeable {
     
     private void refreshContentAndCheck(CacheData cacheData, boolean notify) {
         try {
+            // 查询发生了变更的配置
             ConfigResponse response = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L,
                     notify);
             cacheData.setContent(response.getContent());
@@ -442,6 +443,7 @@ public class ClientWorker implements Closeable {
                         agent.getName(), cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.getMd5(),
                         ContentUtils.truncateContent(response.getContent()), response.getConfigType());
             }
+            // 检查md5值是否发生了变更，如果发生了，那么就发布通知
             cacheData.checkListenerMd5();
         } catch (Exception e) {
             LOGGER.error("refresh content and check md5 fail ,dataId={},group={},tenant={} ", cacheData.dataId,
@@ -688,6 +690,7 @@ public class ClientWorker implements Closeable {
             executor.schedule(() -> {
                 while (!executor.isShutdown() && !executor.isTerminated()) {
                     try {
+                        // 拉取 监听者，仅仅作为一个阻塞等待作用，
                         listenExecutebell.poll(5L, TimeUnit.SECONDS);
                         if (executor.isShutdown() || executor.isTerminated()) {
                             continue;
@@ -713,7 +716,7 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void executeConfigListen() {
-            
+            // 监听到新的缓存？
             Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>(16);
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
             long now = System.currentTimeMillis();
@@ -724,12 +727,13 @@ public class ClientWorker implements Closeable {
                     
                     //check local listeners consistent.
                     if (cache.isSyncWithServer()) {
+                        // 检查md5
                         cache.checkListenerMd5();
                         if (!needAllSync) {
                             continue;
                         }
                     }
-                    
+
                     if (!CollectionUtils.isEmpty(cache.getListeners())) {
                         //get listen  config
                         if (!cache.isUseLocalConfigInfo()) {
@@ -758,7 +762,7 @@ public class ClientWorker implements Closeable {
             }
             
             boolean hasChangedKeys = false;
-            
+            // 监听到 缓存集合
             if (!listenCachesMap.isEmpty()) {
                 for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
@@ -769,7 +773,7 @@ public class ClientWorker implements Closeable {
                         timestampMap.put(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant),
                                 cacheData.getLastModifiedTs().longValue());
                     }
-                    
+                    // 构建批量查询请求
                     ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(listenCaches);
                     configChangeListenRequest.setListen(true);
                     try {

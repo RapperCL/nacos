@@ -33,6 +33,8 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Operation service for ephemeral clients and services.
  *
@@ -42,6 +44,7 @@ import org.springframework.stereotype.Component;
 public class EphemeralClientOperationServiceImpl implements ClientOperationService {
     
     private final ClientManager clientManager;
+
     
     public EphemeralClientOperationServiceImpl(ClientManagerDelegate clientManager) {
         this.clientManager = clientManager;
@@ -94,8 +97,11 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         if (!clientIsLegal(client, clientId)) {
             return;
         }
+        // todo sn10 双写 订阅时，也是先添加到客户端的 订阅者中， 为了适配1.x 的逻辑， 这是订阅当前用户的客户端信息，
+        // 对于服务端1.x而言，某个服务产生了变更时，就会推送给当前服务的订阅者去
         client.addServiceSubscriber(singleton, subscriber);
         client.setLastUpdatedTime();
+        // 这是为了维护发布和订阅的索引。
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
     }
     

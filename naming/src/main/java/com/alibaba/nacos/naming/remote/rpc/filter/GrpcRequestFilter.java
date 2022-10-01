@@ -39,6 +39,7 @@ public class GrpcRequestFilter extends AbstractRequestFilter {
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
+        // todo 0826 请求过滤，当前请求是命名服务器发起的请求，且当前集群模式是1.X时，会直接过滤掉此请求
         if (request instanceof AbstractNamingRequest && !upgradeJudgement.isUseGrpcFeatures()) {
             Response response = getDefaultResponseInstance(handlerClazz);
             response.setErrorInfo(NacosException.SERVER_ERROR,

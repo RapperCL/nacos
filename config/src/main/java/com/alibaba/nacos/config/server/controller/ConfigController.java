@@ -176,6 +176,7 @@ public class ConfigController {
         String encryptedDataKey = pair.getFirst();
         configInfo.setEncryptedDataKey(encryptedDataKey);
         if (StringUtils.isBlank(betaIps)) {
+            // 配置持久化， 难道是跟你讲bataips做灰度？
             if (StringUtils.isBlank(tag)) {
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
                 ConfigChangePublisher.notifyConfigChange(

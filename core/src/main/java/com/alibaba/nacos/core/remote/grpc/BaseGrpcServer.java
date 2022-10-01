@@ -108,9 +108,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         };
         
         addServices(handlerRegistry, serverInterceptor);
-        
+        // 0908 服务端启动， 基于建造者模式实例化 注册压缩和解压器
         server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor())
-                .maxInboundMessageSize(getInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
+                .maxInboundMessageSize(getInboundMessageSize())
+                .fallbackHandlerRegistry(handlerRegistry)
                 .compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .addTransportFilter(new ServerTransportFilter() {

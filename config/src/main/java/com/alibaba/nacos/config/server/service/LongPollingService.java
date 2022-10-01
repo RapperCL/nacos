@@ -234,6 +234,8 @@ public class LongPollingService {
      * @param rsp              HttpServletResponse.
      * @param clientMd5Map     clientMd5Map.
      * @param probeRequestSize probeRequestSize.
+     *
+     *  todo s添加长轮询客户端
      */
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
             int probeRequestSize) {
@@ -272,7 +274,7 @@ public class LongPollingService {
         
         // AsyncContext.setTimeout() is incorrect, Control by oneself
         asyncContext.setTimeout(0L);
-        
+        // 请求异步，将请求交给工作线程池去完成
         ConfigExecutor.executeLongPolling(
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
@@ -456,6 +458,7 @@ public class LongPollingService {
             HttpServletResponse response = (HttpServletResponse) asyncContext.getResponse();
             
             try {
+                // 对发生了变化的 进行编码
                 final String respString = MD5Util.compareMd5ResultString(changedGroups);
                 
                 // Disable cache.

@@ -127,11 +127,13 @@ public class UdpConnector {
         @Override
         public void run() {
             try {
+                // 存放回调的数据
                 callbackMap.put(ackEntry.getKey(), callBack);
                 ackMap.put(ackEntry.getKey(), ackEntry);
                 Loggers.PUSH.info("send udp packet: " + ackEntry.getKey());
                 ackEntry.increaseRetryTime();
                 doSend(ackEntry.getOrigin());
+                // 每次udp推送至少都会执行两次，第一次，发送之后，第二次 重新入队，接受客户端ack响应，
                 GlobalExecutor.scheduleRetransmitter(new UdpRetrySender(ackEntry), Constants.ACK_TIMEOUT_NANOS,
                         TimeUnit.NANOSECONDS);
             } catch (Exception e) {
@@ -153,6 +155,7 @@ public class UdpConnector {
         @Override
         public void run() {
             // Received ack, no need to retry
+            // 接受ack任务， 当ackEntry不包含ack时，退出
             if (!containAck(ackEntry.getKey())) {
                 return;
             }
@@ -167,7 +170,9 @@ public class UdpConnector {
             Loggers.PUSH.info("retry to push data, key: " + ackEntry.getKey());
             try {
                 ackEntry.increaseRetryTime();
+                // 没有接受到ack响应时，会二次发送
                 doSend(ackEntry.getOrigin());
+                // 会执行2次，
                 GlobalExecutor.scheduleRetransmitter(this, Constants.ACK_TIMEOUT_NANOS, TimeUnit.NANOSECONDS);
             } catch (Exception e) {
                 callbackFailed(ackEntry.getKey(), e);

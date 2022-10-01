@@ -281,6 +281,7 @@ public class CacheData {
         }
         return true;
     }
+
     
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
@@ -314,12 +315,15 @@ public class CacheData {
                 configFilterChainManager.doFilter(null, cr);
                 String contentTmp = cr.getContent();
                 listenerWrap.inNotifying = true;
+                // todo 0907 遍历监听者，我们实现的接口实现类，就是在这里被调用执行的。
                 listener.receiveConfigInfo(contentTmp);
                 // compare lastContent and content
+                // 配置变更
                 if (listener instanceof AbstractConfigChangeListener) {
                     Map data = ConfigChangeHandler.getInstance()
                             .parseChangeData(listenerWrap.lastContent, content, type);
                     ConfigChangeEvent event = new ConfigChangeEvent(data);
+                    // 发布配置更新通知
                     ((AbstractConfigChangeListener) listener).receiveConfigChange(event);
                     listenerWrap.lastContent = content;
                 }

@@ -46,11 +46,13 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     @Override
     public void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance) {
         if (instance.isHealthy() && isUnhealthy(service, instance)) {
+            // 心跳间隔超过了15s
             changeHealthyStatus(client, service, instance);
         }
     }
     
     private boolean isUnhealthy(Service service, HealthCheckInstancePublishInfo instance) {
+        // 默认15s
         long beatTimeout = getTimeout(service, instance);
         return System.currentTimeMillis() - instance.getLastHeartBeatTime() > beatTimeout;
     }
@@ -70,6 +72,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     }
     
     private void changeHealthyStatus(Client client, Service service, HealthCheckInstancePublishInfo instance) {
+        // 设置为非健康，并发布事件
         instance.setHealthy(false);
         Loggers.EVT_LOG
                 .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}", instance.getIp(),

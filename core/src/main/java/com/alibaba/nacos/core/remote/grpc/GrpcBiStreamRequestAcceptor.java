@@ -73,7 +73,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
     
     @Override
     public StreamObserver<Payload> requestBiStream(StreamObserver<Payload> responseObserver) {
-        
+
+        // 柳观察者
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             
             final String connectionId = CONTEXT_KEY_CONN_ID.get();
