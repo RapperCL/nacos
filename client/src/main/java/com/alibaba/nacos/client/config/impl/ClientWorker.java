@@ -246,10 +246,12 @@ public class ClientWorker implements Closeable {
     
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
+        // todo 1002 为什么要创建新对应之后，再进行移除，而不是直接移除呢？
         synchronized (cacheMap) {
-            Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
+            cacheMap.get().remove(groupKey);
+         /*   Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
             copy.remove(groupKey);
-            cacheMap.set(copy);
+            cacheMap.set(copy);*/
         }
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
@@ -422,8 +424,14 @@ public class ClientWorker implements Closeable {
     }
     
     private void refreshContentAndCheck(String groupKey, boolean notify) {
-        if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
+        // todo 1002 cacheMap.get() 不会为null
+       /* if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
             CacheData cache = cacheMap.get().get(groupKey);
+            refreshContentAndCheck(cache, notify);
+        }*/
+
+        CacheData cache = cacheMap.get().get(groupKey);
+        if(cache != null){
             refreshContentAndCheck(cache, notify);
         }
     }
@@ -526,7 +534,7 @@ public class ClientWorker implements Closeable {
         private final BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<Object>(1);
         
         private Object bellItem = new Object();
-        
+        // todo 1001 need add volatile
         private long lastAllSyncTime = System.currentTimeMillis();
         
         /**
@@ -722,7 +730,9 @@ public class ClientWorker implements Closeable {
             long now = System.currentTimeMillis();
             boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
             for (CacheData cache : cacheMap.get().values()) {
-                
+                // 防止5s没有执行完成， 同时cache有多个地方同时修改，应该是避免同时修改。竞争不是很激烈，应该通过cas更好
+                // todo 借鉴grpc的写法， 优先cas，如果cas失败之后，再通过锁
+                //  synchronized 也做了优化，支持了自适应升级。
                 synchronized (cache) {
                     
                     //check local listeners consistent.
@@ -780,10 +790,12 @@ public class ClientWorker implements Closeable {
                         RpcClient rpcClient = ensureRpcClient(taskId);
                         ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
                                 rpcClient, configChangeListenRequest);
+                        // todo 1002 configChangeBatchListenResponse 不会返回为null
                         if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
-                            
+                            // todo 1002 记录发生变化的keys
                             Set<String> changeKeys = new HashSet<String>();
                             //handle changed keys,notify listener
+                            // 使用set，说明可能会出现重复？ 如果重复之后，是不是应该做个防止重复的过来
                             if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
                                 hasChangedKeys = true;
                                 for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
@@ -792,6 +804,7 @@ public class ClientWorker implements Closeable {
                                             .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
                                                     changeConfig.getTenant());
                                     changeKeys.add(changeKey);
+                                    // 这里的get会不会为null呢？ 没有加锁，会出现移除的情况
                                     boolean isInitializing = cacheMap.get().get(changeKey).isInitializing();
                                     refreshContentAndCheck(changeKey, !isInitializing);
                                 }
@@ -802,6 +815,7 @@ public class ClientWorker implements Closeable {
                             for (CacheData cacheData : listenCaches) {
                                 String groupKey = GroupKey
                                         .getKeyTenant(cacheData.dataId, cacheData.group, cacheData.getTenant());
+                                // 对未发生更新的key
                                 if (!changeKeys.contains(groupKey)) {
                                     //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
                                     synchronized (cacheData) {
