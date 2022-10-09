@@ -215,6 +215,7 @@ public class ClientWorker implements Closeable {
         if (null != cache) {
             synchronized (cache) {
                 cache.removeListener(listener);
+                // 已经移除了，不需要进行二次判断了，需要，因为移除的仅仅是一个监听者
                 if (cache.getListeners().isEmpty()) {
                     cache.setSyncWithServer(false);
                     agent.removeCache(dataId, group);
@@ -246,12 +247,12 @@ public class ClientWorker implements Closeable {
         }
     }
     
+
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
+        // 当前没必要继续加锁了，外层已经加锁了 不需要额外进行抢占外部锁了，还是可以
         synchronized (cacheMap) {
-            Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
-            copy.remove(groupKey);
-            cacheMap.set(copy);
+            cacheMap.get().remove(groupKey);
         }
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
@@ -425,8 +426,8 @@ public class ClientWorker implements Closeable {
     }
     
     private void refreshContentAndCheck(String groupKey, boolean notify) {
-        if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
-            CacheData cache = cacheMap.get().get(groupKey);
+        CacheData cache = cacheMap.get().get(groupKey);
+        if(cache != null){
             refreshContentAndCheck(cache, notify);
         }
     }
@@ -717,8 +718,8 @@ public class ClientWorker implements Closeable {
         @Override
         public void executeConfigListen() {
             
-            Map<String, List<CacheData>> listenCachesMap = new HashMap<>(16);
-            Map<String, List<CacheData>> removeListenCachesMap = new HashMap<>(16);
+            final Map<String, List<CacheData>> listenCachesMap = new HashMap<>(16);
+            final Map<String, List<CacheData>> removeListenCachesMap = new HashMap<>(16);
             long now = System.currentTimeMillis();
             boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
             for (CacheData cache : cacheMap.get().values()) {
