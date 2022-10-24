@@ -54,6 +54,7 @@ public class NamingFactory {
      */
     public static NamingService createNamingService(Properties properties) throws NacosException {
         try {
+            // todo 1017 跨模块加载
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             return (NamingService) constructor.newInstance(properties);

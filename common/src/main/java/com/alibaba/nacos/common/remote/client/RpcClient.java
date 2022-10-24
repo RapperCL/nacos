@@ -278,7 +278,7 @@ public abstract class RpcClient implements Closeable {
         if (!success) {
             return;
         }
-        
+        // todo 1017 修改
         clientEventExecutor = new ScheduledThreadPoolExecutor(2, r -> {
             Thread t = new Thread(r);
             t.setName("com.alibaba.nacos.client.remote.worker");
@@ -394,7 +394,7 @@ public abstract class RpcClient implements Closeable {
             }
             
         }
-        
+        // todo 也没有必要
         if (connectToServer != null) {
             LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Success to connect to server [{}] on start up, connectionId = {}",
                     name, connectToServer.serverInfo.getAddress(), connectToServer.getConnectionId());
@@ -651,6 +651,7 @@ public abstract class RpcClient implements Closeable {
                             "Client not connected, current status:" + rpcClientStatus.get());
                 }
                 response = this.currentConnection.request(request, timeoutMills);
+                // todo 1017 response不会为空啊
                 if (response == null) {
                     throw new NacosException(SERVER_ERROR, "Unknown Exception.");
                 }
@@ -676,6 +677,7 @@ public abstract class RpcClient implements Closeable {
             } catch (Exception e) {
                 if (waitReconnect) {
                     try {
+                        // 未连接时，我们是否应该减去 等待连接时间？ 否则请求容易超时
                         // wait client to reconnect.
                         Thread.sleep(Math.min(100, timeoutMills / 3));
                     } catch (Exception exception) {

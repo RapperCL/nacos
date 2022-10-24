@@ -75,7 +75,7 @@ public class FailoverReactor implements Closeable {
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String cacheDir) {
         this.serviceInfoHolder = serviceInfoHolder;
         this.failoverDir = cacheDir + FAILOVER_DIR;
-        // init executorService
+        // init executorService // todo 1017 修改为 通用方法
         this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {

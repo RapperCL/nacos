@@ -203,6 +203,7 @@ public class ServiceInfoHolder implements Closeable {
         
         List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
                 newHostMap.entrySet());
+        // 遍历新的host 新的中存在，且旧的中不存在的 newHosts， 旧的中存在，但是host不同
         for (Map.Entry<String, Instance> entry : newServiceHosts) {
             Instance host = entry.getValue();
             String key = entry.getKey();
@@ -215,7 +216,7 @@ public class ServiceInfoHolder implements Closeable {
                 newHosts.add(host);
             }
         }
-        
+        // 老的存在，新的不存在的。移除
         for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
             Instance host = entry.getValue();
             String key = entry.getKey();
