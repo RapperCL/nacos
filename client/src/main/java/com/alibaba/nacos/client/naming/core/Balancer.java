@@ -90,8 +90,7 @@ public class Balancer {
             }
         }
         NAMING_LOGGER.debug("for (Host host : hosts)");
-        Chooser<String, Instance> vipChooser = new Chooser<>("www.taobao.com");
-        vipChooser.refresh(hostsWithWeight);
+        Chooser<String, Instance> vipChooser = new Chooser<>("www.taobao.com", hostsWithWeight);
         NAMING_LOGGER.debug("vipChooser.refresh");
         return vipChooser.randomWithWeight();
     }
