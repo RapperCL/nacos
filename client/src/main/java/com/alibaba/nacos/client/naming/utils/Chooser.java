@@ -146,21 +146,19 @@ public class Chooser<K, T> {
             
             int index = 0;
             double randomRange = 0D;
-            double[] exactWeights = new double[items.size()];
-            
+            double exactWeight;
             weights = new double[items.size()];
-            
+            // todo remove exactWeights
             for (Pair<T> item : itemsWithWeight) {
                 double singleWeight = item.weight();
                 //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
                 if (singleWeight <= 0) {
                     continue;
                 }
-                exactWeights[index] = singleWeight / originWeightSum;
+                exactWeight = singleWeight / originWeightSum;
                 
-                weights[index] = randomRange + exactWeights[index];
-                randomRange += exactWeights[index];
-                index++;
+                weights[index++] = exactWeight + randomRange;
+                randomRange += exactWeight;
             }
             
             double doublePrecisionDelta = 0.0001;
